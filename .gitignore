@@ -1,0 +1,11 @@
+pythondata-*
+lite*
+prog
+build
+*.dyn_o
+*.hi
+*.dyn_hi
+*.o
+env/
+migen/
+valentyusb/
