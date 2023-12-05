@@ -1,5 +1,5 @@
 pythondata-*
-lite*
+lite*/
 prog
 build
 *.dyn_o
@@ -7,5 +7,6 @@ build
 *.dyn_hi
 *.o
 env/
+.env/
 migen/
 valentyusb/

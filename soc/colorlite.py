@@ -31,7 +31,7 @@ from litex.build.generic_platform import *
 
 
 
-# CRG ----------------------------------------------------------------------------------------------
+# CRG --------------------
 
 class _CRG(LiteXModule):
     def __init__(self, platform, sys_clk_freq):
@@ -48,7 +48,7 @@ class _CRG(LiteXModule):
         pll.register_clkin(clk25, 25e6)
         pll.create_clkout(self.cd_sys, sys_clk_freq)
 
-# Clash Wrapper ------------------------------------------------------------------------------------
+# Clash Wrapper --------------------
 
 class ClashWrapper(Module):
     def __init__(self, platform):
@@ -73,52 +73,46 @@ class ClashWrapper(Module):
         )
 
 
-# ColorLite ----------------------------------------------------------------------------------------
+# ColorLite --------------------
 
 class ColorLite(SoCMini):
     def __init__(self, sys_clk_freq=int(40e6), with_etherbone=True, ip_address=None, mac_address=None):
         platform = colorlight_5a_75b.Platform(revision="7.0")
-        platform.add_source_dir("clash/verilog/")
+        platform.add_source_dir("../clash/verilog/")
 
-        # CRG --------------------------------------------------------------------------------------
+        # CRG --------------------
         self.crg = _CRG(platform, sys_clk_freq)
 
-        # SoCMini ----------------------------------------------------------------------------------
+        # SoCMini --------------------
         SoCMini.__init__(self, platform, clk_freq=sys_clk_freq)
 
-        # Etherbone --------------------------------------------------------------------------------
-        if with_etherbone:
-            self.ethphy = LiteEthPHYRGMII(
-                clock_pads = self.platform.request("eth_clocks"),
-                pads       = self.platform.request("eth"),
-                tx_delay   = 0e-9)
-            self.add_etherbone(
-                phy         = self.ethphy,
-                ip_address  = ip_address,
-                mac_address = mac_address,
-                data_width  = 32,
-            )
+        # Ethernet --------------------
+        self.ethphy = LiteEthPHYRGMII(
+            clock_pads = self.platform.request("eth_clocks"),
+            pads = self.platform.request("eth"),
+            tx_delay = 0e-9)
 
-        # SPIFlash ---------------------------------------------------------------------------------
-        self.spiflash = ECP5SPIFlash(
-            pads         = platform.request("spiflash"),
-            sys_clk_freq = sys_clk_freq,
-            spi_clk_freq = 5e6,
-        )
+        self.add_ethernet(
+            phy = self.ethphy,
+            phy_cd = self.crg,
+            data_width = 32
+        )        
 
-        # Led --------------------------------------------------------------------------------------
+        # Led --------------------
         self.leds = LedChaser(
             pads         = platform.request_all("user_led_n"),
             sys_clk_freq = sys_clk_freq)
         
         # Custom hardware
-        
-        # self.clash_wrapper = ClashWrapper(platform)
-        # self.add_wb_slave(mem_decoder(self.mem_map["clash_wrapper"]), clash_wrapper.bus)
-        # self.add_memory_region("clash_wrapper", self.mem_map["clash_wrapper"], 1, type="io")
+        # din = Signal(33)
+        # dout = Signal(33)
+        # self.specials = Instance("clash_wrapper",
+        #     data_in = din,
+        #     data_out = dout
+        # )
 
 
-# Build --------------------------------------------------------------------------------------------
+# Build --------------------
 
 def main():
     parser = argparse.ArgumentParser(description="Take control of your ColorLight FPGA board with LiteX/LiteEth :)")
