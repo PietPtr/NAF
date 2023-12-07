@@ -9,6 +9,9 @@
 import os
 import argparse
 import sys
+from liteeth.core import LiteEthUDPIPCore
+from liteeth.core.arp import LiteEthARP
+from liteeth.core.udp import LiteEthUDP
 
 from migen import *
 from migen.genlib.misc import WaitTimer
@@ -27,7 +30,10 @@ from litex.soc.integration.builder import *
 from litex.soc.interconnect import wishbone
 
 from liteeth.phy.ecp5rgmii import LiteEthPHYRGMII
+from liteeth.core.ip import LiteEthIP, LiteEthIPTX
 from litex.build.generic_platform import *
+from liteeth.common import convert_ip
+
 
 
 
@@ -91,12 +97,27 @@ class ColorLite(SoCMini):
             clock_pads = self.platform.request("eth_clocks"),
             pads = self.platform.request("eth"),
             tx_delay = 0e-9)
+        
+        eth_dw = 8
 
         self.add_ethernet(
             phy = self.ethphy,
             phy_cd = self.crg,
-            data_width = 32
-        )        
+            data_width = eth_dw
+        )
+
+        self.ethcore = LiteEthUDPIPCore(
+            phy         = self.ethphy,
+            mac_address = mac_address,
+            ip_address  = ip_address,
+            clk_freq    = self.clk_freq,
+            arp_entries = 1,
+            dw          = eth_dw,
+            with_ip_broadcast = True,
+            with_sys_datapath = True,
+            interface   = {True :            "hybrid", False: "crossbar"}[with_ethmac],
+            endianness  = {True : self.cpu.endianness, False:      "big"}[with_ethmac],
+        )
 
         # Led --------------------
         self.leds = LedChaser(

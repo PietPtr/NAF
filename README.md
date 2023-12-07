@@ -15,6 +15,7 @@ cd soc/
 wget https://raw.githubusercontent.com/enjoy-digital/litex/master/litex_setup.py
 chmod +x litex_setup.py
 virtualenv .env
+source .env/bin/activate
 ./litex_setup.py init install
 ```
 Clone, make, and install Yosys, prjtrellis, and NextPNR according to their respective install instructions
