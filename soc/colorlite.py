@@ -12,6 +12,8 @@ import sys
 from liteeth.core import LiteEthUDPIPCore
 from liteeth.core.arp import LiteEthARP
 from liteeth.core.udp import LiteEthUDP
+from liteeth.phy.model import LiteEthPHYModel
+from liteeth.phy.rmii import LiteEthPHYRMII
 
 from migen import *
 from migen.genlib.misc import WaitTimer
@@ -32,8 +34,9 @@ from litex.soc.interconnect import wishbone
 from liteeth.phy.ecp5rgmii import LiteEthPHYRGMII
 from liteeth.core.ip import LiteEthIP, LiteEthIPTX
 from litex.build.generic_platform import *
-from liteeth.common import convert_ip
+from liteeth.common import convert_ip, eth_udp_user_description
 
+from litex.soc.interconnect.packet import *
 
 
 
@@ -79,6 +82,16 @@ class ClashWrapper(Module):
         )
 
 
+# UDP to App --------------------
+
+class UdpToApp(LiteXModule):
+    def __init__(self, udp_in_port, udp_out_port):
+        self.sink   = sink   = stream.Endpoint(eth_udp_user_description(32))
+        self.source = source = stream.Endpoint(eth_udp_user_description(32))
+
+
+
+
 # ColorLite --------------------
 
 class ColorLite(SoCMini):
@@ -93,20 +106,21 @@ class ColorLite(SoCMini):
         SoCMini.__init__(self, platform, clk_freq=sys_clk_freq)
 
         # Ethernet --------------------
-        self.ethphy = LiteEthPHYRGMII(
+
+        self.ethphy = phy = LiteEthPHYRGMII(
             clock_pads = self.platform.request("eth_clocks"),
             pads = self.platform.request("eth"),
             tx_delay = 0e-9)
         
-        eth_dw = 8
+        eth_dw = 32
 
-        self.add_ethernet(
-            phy = self.ethphy,
-            phy_cd = self.crg,
-            data_width = eth_dw
-        )
+        # self.add_ethernet(
+        #     phy = self.ethphy,
+        #     phy_cd = self.crg,
+        #     data_width = eth_dw
+        # )
 
-        self.ethcore = LiteEthUDPIPCore(
+        ethcore = LiteEthUDPIPCore(
             phy         = self.ethphy,
             mac_address = mac_address,
             ip_address  = ip_address,
@@ -115,9 +129,44 @@ class ColorLite(SoCMini):
             dw          = eth_dw,
             with_ip_broadcast = True,
             with_sys_datapath = True,
-            interface   = {True :            "hybrid", False: "crossbar"}[with_ethmac],
-            endianness  = {True : self.cpu.endianness, False:      "big"}[with_ethmac],
+            interface   = "crossbar",
+            endianness  = "big"
         )
+
+
+        app_port = ethcore.udp.crossbar.get_port(50059)
+        # self.comb += app_port.source.param.src_port.eq(0xdeadbeef)
+        print(app_port.source.payload)
+        print(app_port.sink)
+        # self.comb += app_port.source.
+        self.specials += Instance("boilerplate",
+            i_valid_rx=app_port.sink.valid,
+            o_ready_rx=app_port.sink.ready,
+            i_first_rx=app_port.sink.first,
+            i_last_rx=app_port.sink.last,
+            i_payload_rx=app_port.sink.payload.data,
+
+            o_valid_tx=app_port.source.valid,
+            i_ready_tx=app_port.source.ready,
+            o_first_tx=app_port.source.first,
+            o_last_tx=app_port.source.last,
+            o_payload_tx=app_port.source.payload.data
+        )
+
+        self.add_module(name=f"ethcore_udp", module=ethcore)
+
+        eth_rx_clk = getattr(phy, "crg", phy).cd_eth_rx.clk
+        eth_tx_clk = getattr(phy, "crg", phy).cd_eth_tx.clk
+        if not isinstance(phy, LiteEthPHYModel) and not getattr(phy, "model", False):
+            print("not lite eth phy model")
+            self.platform.add_period_constraint(eth_rx_clk, 1e9/phy.rx_clk_freq)
+            if not eth_rx_clk is eth_tx_clk:
+                print("rx clk =/= tx clk")
+                self.platform.add_period_constraint(eth_tx_clk, 1e9/phy.tx_clk_freq)
+                self.platform.add_false_path_constraints(self.crg.cd_sys.clk, eth_rx_clk, eth_tx_clk)
+            else:
+                print("rx clk = tx clk")
+                self.platform.add_false_path_constraints(self.crg.cd_sys.clk, eth_rx_clk)
 
         # Led --------------------
         self.leds = LedChaser(
