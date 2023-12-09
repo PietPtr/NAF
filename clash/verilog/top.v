@@ -1,4 +1,7 @@
 module boilerplate (
+    input wire clk,
+    input wire rst, 
+
     input wire valid_rx,
     output wire ready_rx,
     input wire first_rx,
@@ -11,10 +14,9 @@ module boilerplate (
     output wire last_tx,
     output wire [31:0] payload_tx,
 );
-    // Module implementation goes here
-    // assign valid_tx = valid_rx;
-    // assign ready_rx = ready_tx;
-    // assign first_tx = first_rx;
-    // assign last_tx = last_rx;
-    // assign payload_tx = payload_rx;
+    assign valid_tx = valid_rx;
+    assign ready_rx = ready_tx;
+    assign first_tx = first_rx;
+    assign last_tx = last_rx;
+    assign payload_tx = payload_rx;
 endmodule

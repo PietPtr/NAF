@@ -29,7 +29,6 @@ from litex.soc.cores.gpio import GPIOOut
 from litex.soc.cores.led import LedChaser
 from litex.soc.integration.soc_core import *
 from litex.soc.integration.builder import *
-from litex.soc.interconnect import wishbone
 
 from liteeth.phy.ecp5rgmii import LiteEthPHYRGMII
 from liteeth.core.ip import LiteEthIP, LiteEthIPTX
@@ -37,8 +36,6 @@ from litex.build.generic_platform import *
 from liteeth.common import convert_ip, eth_udp_user_description
 
 from litex.soc.interconnect.packet import *
-
-
 
 # CRG --------------------
 
@@ -57,46 +54,11 @@ class _CRG(LiteXModule):
         pll.register_clkin(clk25, 25e6)
         pll.create_clkout(self.cd_sys, sys_clk_freq)
 
-# Clash Wrapper --------------------
+# Network Attached FPGA --------------------
 
-class ClashWrapper(Module):
-    def __init__(self, platform):
-        # Wishbone Interface
-        self.bus = bus = wishbone.Interface()
-
-        # Verilog Module Instance
-        self.specials += Instance("ClashWrapper",
-            # Clock and Reset
-            i_clk = ClockSignal(),
-            i_rst = ResetSignal(),
-
-            # Wishbone Interface
-            i_adr   = bus.adr,
-            i_dat_w = bus.dat_w,
-            o_dat_r = bus.dat_r,
-            i_we    = bus.we,
-            i_stb   = bus.stb,
-            o_ack   = bus.ack,
-            i_sel   = bus.sel,
-            i_cyc   = bus.cyc
-        )
-
-
-# UDP to App --------------------
-
-class UdpToApp(LiteXModule):
-    def __init__(self, udp_in_port, udp_out_port):
-        self.sink   = sink   = stream.Endpoint(eth_udp_user_description(32))
-        self.source = source = stream.Endpoint(eth_udp_user_description(32))
-
-
-
-
-# ColorLite --------------------
-
-class ColorLite(SoCMini):
-    def __init__(self, sys_clk_freq=int(40e6), with_etherbone=True, ip_address=None, mac_address=None):
-        platform = colorlight_5a_75b.Platform(revision="7.0")
+class NAF(SoCMini):
+    def __init__(self, sys_clk_freq=int(40e6), ip_address=None, mac_address=None):
+        platform = colorlight_5a_75b.Platform(revision="8.0")
         platform.add_source_dir("../clash/verilog/")
 
         # CRG --------------------
@@ -105,82 +67,74 @@ class ColorLite(SoCMini):
         # SoCMini --------------------
         SoCMini.__init__(self, platform, clk_freq=sys_clk_freq)
 
+        # Led --------------------
+        self.leds = LedChaser(
+            pads         = platform.request_all("user_led_n"),
+            sys_clk_freq = sys_clk_freq)
+
         # Ethernet --------------------
-
-        self.ethphy = phy = LiteEthPHYRGMII(
+        self.ethphy = ethphy = LiteEthPHYRGMII(
             clock_pads = self.platform.request("eth_clocks"),
-            pads = self.platform.request("eth"),
-            tx_delay = 0e-9)
+            pads       = self.platform.request("eth"),
+            tx_delay           = 0e-9,
+            rx_delay           = 2e-9,
+            with_hw_init_reset = False, # FIXME: required since sys_clk = eth_rx_clk.
+        )
         
-        eth_dw = 32
+        data_width = 32
 
-        # self.add_ethernet(
-        #     phy = self.ethphy,
-        #     phy_cd = self.crg,
-        #     data_width = eth_dw
-        # )
-
-        ethcore = LiteEthUDPIPCore(
+        self.ip_udp_core = core = LiteEthUDPIPCore(
             phy         = self.ethphy,
             mac_address = mac_address,
             ip_address  = ip_address,
             clk_freq    = self.clk_freq,
             arp_entries = 1,
-            dw          = eth_dw,
+            dw          = data_width,
             with_ip_broadcast = True,
             with_sys_datapath = True,
             interface   = "crossbar",
             endianness  = "big"
         )
 
+        udp_listen_port = 50059
+        raw_port = self.ip_udp_core.udp.crossbar.get_port(udp_listen_port)
 
-        app_port = ethcore.udp.crossbar.get_port(50059)
-        # self.comb += app_port.source.param.src_port.eq(0xdeadbeef)
-        print(app_port.source.payload)
-        print(app_port.sink)
-        # self.comb += app_port.source.
-        self.specials += Instance("boilerplate",
-            i_valid_rx=app_port.sink.valid,
-            o_ready_rx=app_port.sink.ready,
-            i_first_rx=app_port.sink.first,
-            i_last_rx=app_port.sink.last,
-            i_payload_rx=app_port.sink.payload.data,
-
-            o_valid_tx=app_port.source.valid,
-            i_ready_tx=app_port.source.ready,
-            o_first_tx=app_port.source.first,
-            o_last_tx=app_port.source.last,
-            o_payload_tx=app_port.source.payload.data
+        self.in_fifo = in_fifo = PacketFIFO(eth_udp_user_description(data_width),
+            payload_depth = 32,
+            param_depth = 4,
+            buffered = True
         )
 
-        self.add_module(name=f"ethcore_udp", module=ethcore)
+        self.out_fifo = out_fifo = PacketFIFO(eth_udp_user_description(data_width),
+            payload_depth = 32,
+            param_depth = 4,
+            buffered = True
+        )
 
-        eth_rx_clk = getattr(phy, "crg", phy).cd_eth_rx.clk
-        eth_tx_clk = getattr(phy, "crg", phy).cd_eth_tx.clk
-        if not isinstance(phy, LiteEthPHYModel) and not getattr(phy, "model", False):
-            print("not lite eth phy model")
-            self.platform.add_period_constraint(eth_rx_clk, 1e9/phy.rx_clk_freq)
-            if not eth_rx_clk is eth_tx_clk:
-                print("rx clk =/= tx clk")
-                self.platform.add_period_constraint(eth_tx_clk, 1e9/phy.tx_clk_freq)
-                self.platform.add_false_path_constraints(self.crg.cd_sys.clk, eth_rx_clk, eth_tx_clk)
-            else:
-                print("rx clk = tx clk")
-                self.platform.add_false_path_constraints(self.crg.cd_sys.clk, eth_rx_clk)
+        self.comb += [
+            raw_port.source.connect(in_fifo.sink, omit = {"src_port", "dst_port"}),
+            in_fifo.sink.src_port.eq(raw_port.source.dst_port),
+            in_fifo.sink.dst_port.eq(raw_port.source.src_port),
+            
+            out_fifo.source.connect(raw_port.sink),
+        ]
 
-        # Led --------------------
-        self.leds = LedChaser(
-            pads         = platform.request_all("user_led_n"),
-            sys_clk_freq = sys_clk_freq)
-        
-        # Custom hardware
-        # din = Signal(33)
-        # dout = Signal(33)
-        # self.specials = Instance("clash_wrapper",
-        #     data_in = din,
-        #     data_out = dout
-        # )
+        self.specials += Instance("boilerplate",
+            i_clk=ClockSignal("sys"),
+            i_rst=ResetSignal("sys"),
 
+            i_valid_rx=in_fifo.source.valid,
+            o_ready_rx=in_fifo.source.ready,
+            i_first_rx=in_fifo.source.first,
+            i_last_rx=in_fifo.source.last,
+            i_payload_rx=in_fifo.source.payload.data,
+
+            o_valid_tx=out_fifo.sink.valid,
+            i_ready_tx=out_fifo.sink.ready,
+            o_first_tx=out_fifo.sink.first,
+            o_last_tx=out_fifo.sink.last,
+            o_payload_tx=out_fifo.sink.payload.data
+        )
 
 # Build --------------------
 
@@ -193,11 +147,11 @@ def main():
     parser.add_argument("--mac-address", default="0x726b895bc2e2", help="Ethernet MAC address of the board (defaullt: 0x726b895bc2e2).")
     args = parser.parse_args()
 
-    # TODO: call clash here to generate SV
+    # TODO: call clash here to generate verilog
 
-    soc     = ColorLite(ip_address=args.ip_address, mac_address=int(args.mac_address, 0))
+    soc     = NAF(ip_address=args.ip_address, mac_address=int(args.mac_address, 0))
     builder = Builder(soc, output_dir="build", csr_csv="scripts/csr.csv")
-    builder.build(build_name="colorlite", run=args.build)
+    builder.build(build_name="naf", run=args.build)
 
     if args.load:
         prog = soc.platform.create_programmer()
@@ -205,9 +159,9 @@ def main():
 
     if args.flash:
         prog = soc.platform.create_programmer()
-        os.system("cp bit_to_flash.py build/gateware/")
-        os.system("cd build/gateware && ./bit_to_flash.py colorlite.bit colorlite.svf.flash")
-        prog.load_bitstream(os.path.join(builder.gateware_dir, soc.build_name + ".svf.flash"))
+        # os.system("cp bit_to_flash.py build/gateware/")
+        os.system("cd build/gateware && chmod +x ./build_naf.sh && ./build_naf.sh")
+        prog.load_bitstream(os.path.join(builder.gateware_dir, soc.build_name + ".bit"))
 
 if __name__ == "__main__":
     main()

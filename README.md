@@ -18,4 +18,4 @@ virtualenv .env
 source .env/bin/activate
 ./litex_setup.py init install
 ```
-Clone, make, and install Yosys, prjtrellis, and NextPNR according to their respective install instructions
+Clone, make, and install Yosys, prjtrellis, NextPNR, and the clash-compiler according to their respective install instructions
