@@ -1,1 +1,0 @@
-clash Top.hs --verilog

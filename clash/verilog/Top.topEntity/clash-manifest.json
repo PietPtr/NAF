@@ -6,7 +6,7 @@
         20,
         20
     ],
-    "hash": "072863b249036660571cd41730aee722a7fc4829b5ba074ff86a27f844fe6c18",
+    "hash": "78a683d75f450945972ccb64fc47d67a259722045158666f4444e5dea1df1bec",
     "dependencies": {
         "transitive": []
     },
@@ -22,7 +22,7 @@
         },
         {
             "name": "main.v",
-            "sha256": "62a31b087ca954bccc2e7ab5fc98642f8068e42c6f44466418ff9e4913f25c0a"
+            "sha256": "94fb6b6a31ed7adfc8f48bb862c2f689396f54453533f6521b475c8399bba4f0"
         }
     ],
     "top_component": {
@@ -53,17 +53,87 @@
             },
             {
                 "direction": "in",
-                "width": 33,
-                "name": "data_in",
+                "width": 1,
+                "name": "udp_rx_valid",
                 "is_clock": false,
-                "type_name": "[32:0]"
+                "type_name": ""
+            },
+            {
+                "direction": "in",
+                "width": 1,
+                "name": "udp_rx_first",
+                "is_clock": false,
+                "type_name": ""
+            },
+            {
+                "direction": "in",
+                "width": 1,
+                "name": "udp_rx_last",
+                "is_clock": false,
+                "type_name": ""
+            },
+            {
+                "direction": "in",
+                "width": 32,
+                "name": "udp_rx_payload",
+                "is_clock": false,
+                "type_name": "[31:0]"
+            },
+            {
+                "direction": "in",
+                "width": 4,
+                "name": "udp_rx_last_be",
+                "is_clock": false,
+                "type_name": "[3:0]"
+            },
+            {
+                "direction": "in",
+                "width": 1,
+                "name": "udp_tx_ready",
+                "is_clock": false,
+                "type_name": ""
             },
             {
                 "direction": "out",
-                "width": 33,
-                "name": "data_out",
+                "width": 1,
+                "name": "udp_rx_ready",
                 "is_clock": false,
-                "type_name": "[32:0]"
+                "type_name": ""
+            },
+            {
+                "direction": "out",
+                "width": 1,
+                "name": "udp_tx_valid",
+                "is_clock": false,
+                "type_name": ""
+            },
+            {
+                "direction": "out",
+                "width": 1,
+                "name": "udp_tx_first",
+                "is_clock": false,
+                "type_name": ""
+            },
+            {
+                "direction": "out",
+                "width": 1,
+                "name": "udp_tx_last",
+                "is_clock": false,
+                "type_name": ""
+            },
+            {
+                "direction": "out",
+                "width": 32,
+                "name": "udp_tx_payload",
+                "is_clock": false,
+                "type_name": "[31:0]"
+            },
+            {
+                "direction": "out",
+                "width": 4,
+                "name": "udp_tx_last_be",
+                "is_clock": false,
+                "type_name": "[3:0]"
             }
         ],
         "name": "main"

@@ -21,6 +21,9 @@ from litex.soc.interconnect.packet import *
 from liteeth.phy.model import LiteEthPHYModel
 from liteeth.core import LiteEthUDPIPCore
 from liteeth.common import convert_ip, eth_udp_user_description
+from common import clash
+
+from top import NAFTop
 
 
 _io = [
@@ -45,8 +48,8 @@ class Platform(SimPlatform):
     def __init__(self):
         SimPlatform.__init__(self, "SIM", _io)
 
-class NAF(SoCMini):
-    def __init__(self, sys_clk_freq=int(40e6), ip_address=None, mac_address=None):
+class NAFSim(SoCMini):
+    def __init__(self, sys_clk_freq=int(40e6), ip_address=None, mac_address=None, manager_ip=None):
         platform = Platform()
         platform.add_source_dir("../clash/verilog/")
 
@@ -61,59 +64,14 @@ class NAF(SoCMini):
 
         data_width = 32
 
-        self.ip_udp_core = core = LiteEthUDPIPCore(
+        self.ip_udp_core = ip_udp_core = LiteEthUDPIPCore(
             phy         = self.ethphy,
             mac_address = mac_address,
             ip_address  = ip_address,
-            clk_freq    = self.clk_freq,
-            arp_entries = 1,
-            dw          = data_width,
-            with_ip_broadcast = True,
-            with_sys_datapath = True,
-            interface   = "crossbar",
-            endianness  = "big"
+            clk_freq    = self.clk_freq
         )
 
-        udp_listen_port = 50059
-        raw_port = self.ip_udp_core.udp.crossbar.get_port(udp_listen_port)
-
-        self.in_fifo = in_fifo = PacketFIFO(eth_udp_user_description(data_width),
-            payload_depth = 32,
-            param_depth = 4,
-            buffered = True
-        )
-
-        self.out_fifo = out_fifo = PacketFIFO(eth_udp_user_description(data_width),
-            payload_depth = 32,
-            param_depth = 4,
-            buffered = True
-        )
-
-        self.comb += [
-            raw_port.source.connect(in_fifo.sink, omit = {"src_port", "dst_port"}),
-            in_fifo.sink.src_port.eq(raw_port.source.dst_port),
-            in_fifo.sink.dst_port.eq(raw_port.source.src_port),
-            
-            out_fifo.source.connect(raw_port.sink),
-        ]
-
-        self.specials += Instance("boilerplate",
-            i_clk=ClockSignal("sys"),
-            i_rst=ResetSignal("sys"),
-
-            i_valid_rx=in_fifo.source.valid,
-            o_ready_rx=in_fifo.source.ready,
-            i_first_rx=in_fifo.source.first,
-            i_last_rx=in_fifo.source.last,
-            i_payload_rx=in_fifo.source.payload.data,
-
-            o_valid_tx=out_fifo.sink.valid,
-            i_ready_tx=out_fifo.sink.ready,
-            o_first_tx=out_fifo.sink.first,
-            o_last_tx=out_fifo.sink.last,
-            o_payload_tx=out_fifo.sink.payload.data
-        )
-
+        self.top = NAFTop(data_width, ip_udp_core, manager_ip)
 
 
 def main():
@@ -124,16 +82,21 @@ def main():
     parser.add_argument("--trace-start",      default=0,              help="Cycle to start VCD tracing")
     parser.add_argument("--trace-end",        default=-1,             help="Cycle to end VCD tracing")
     parser.add_argument("--opt-level",        default="O0",           help="Compilation optimization level")
+    parser.add_argument("--manager-ip",       default="192.168.1.1",  help="IP address of machine running a NAF manager program.")
+    parser.add_argument("--ip-address",       default="172.30.28.50",   help="Ethernet IP address of the board (default: 192.168.1.20).")
+    parser.add_argument("--mac-address",      default="0x726b895bc2e2", help="Ethernet MAC address of the board (defaullt: 0x726b895bc2e2).")
+    
     args = parser.parse_args()
 
     soc_kwargs     = {}
     builder_kwargs = builder_argdict(args)
 
     sim_config = SimConfig(default_clk="sys_clk")
+    sim_config.add_module("ethernet", "eth", args={"interface": "tap0", "ip": args.ip_address})
 
-    sim_config.add_module("ethernet", "eth", args={"interface": "tap0", "ip": "172.30.28.50"})
+    clash.build()
 
-    soc = NAF(ip_address="192.168.1.20", mac_address=int("0x726b895bc2e2", 0), **soc_kwargs)
+    soc = NAFSim(ip_address=args.ip_address, mac_address=int(args.mac_address, 0), manager_ip=args.manager_ip, **soc_kwargs)
     builder = Builder(soc, csr_csv="scripts/csr.csv")
     vns = builder.build(threads=args.threads, sim_config=sim_config,
         opt_level   = args.opt_level,

@@ -7,16 +7,31 @@ module boilerplate (
     input wire first_rx,
     input wire last_rx,
     input wire [31:0] payload_rx,
+    input wire [3:0] last_be_rx,
 
     output wire valid_tx,
     input wire ready_tx,
     output wire first_tx,
     output wire last_tx,
     output wire [31:0] payload_tx,
+    output wire [3:0] last_be_tx,
 );
-    assign valid_tx = valid_rx;
-    assign ready_rx = ready_tx;
-    assign first_tx = first_rx;
-    assign last_tx = last_rx;
-    assign payload_tx = payload_rx;
+    main main(
+        .clock(clk),
+        .reset(rst),
+        .enable(1),
+        .udp_rx_valid(valid_rx),
+        .udp_rx_first(first_rx),
+        .udp_rx_last(last_rx),
+        .udp_rx_payload(payload_rx),
+        .udp_rx_last_be(last_be_rx),
+        .udp_tx_ready(ready_tx),
+
+        .udp_tx_valid(valid_tx),
+        .udp_tx_first(first_tx),
+        .udp_tx_last(last_tx),
+        .udp_tx_payload(payload_tx),
+        .udp_tx_last_be(last_be_tx),
+        .udp_rx_ready(ready_rx)
+    );
 endmodule

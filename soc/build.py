@@ -37,6 +37,9 @@ from liteeth.common import convert_ip, eth_udp_user_description
 
 from litex.soc.interconnect.packet import *
 
+from top import NAFTop
+from common import clash
+
 # CRG --------------------
 
 class _CRG(LiteXModule):
@@ -56,8 +59,8 @@ class _CRG(LiteXModule):
 
 # Network Attached FPGA --------------------
 
-class NAF(SoCMini):
-    def __init__(self, sys_clk_freq=int(40e6), ip_address=None, mac_address=None):
+class NAFSoC(SoCMini):
+    def __init__(self, sys_clk_freq=int(40e6), ip_address=None, mac_address=None, manager_ip=None):
         platform = colorlight_5a_75b.Platform(revision="8.0")
         platform.add_source_dir("../clash/verilog/")
 
@@ -72,7 +75,9 @@ class NAF(SoCMini):
             pads         = platform.request_all("user_led_n"),
             sys_clk_freq = sys_clk_freq)
 
-        # Ethernet --------------------
+        # Board top
+        data_width = 32
+
         self.ethphy = ethphy = LiteEthPHYRGMII(
             clock_pads = self.platform.request("eth_clocks"),
             pads       = self.platform.request("eth"),
@@ -80,11 +85,9 @@ class NAF(SoCMini):
             rx_delay           = 2e-9,
             with_hw_init_reset = False, # FIXME: required since sys_clk = eth_rx_clk.
         )
-        
-        data_width = 32
 
-        self.ip_udp_core = core = LiteEthUDPIPCore(
-            phy         = self.ethphy,
+        self.ip_udp_core = ip_udp_core = LiteEthUDPIPCore(
+            phy         = ethphy,
             mac_address = mac_address,
             ip_address  = ip_address,
             clk_freq    = self.clk_freq,
@@ -95,46 +98,8 @@ class NAF(SoCMini):
             interface   = "crossbar",
             endianness  = "big"
         )
-
-        udp_listen_port = 50059
-        raw_port = self.ip_udp_core.udp.crossbar.get_port(udp_listen_port)
-
-        self.in_fifo = in_fifo = PacketFIFO(eth_udp_user_description(data_width),
-            payload_depth = 32,
-            param_depth = 4,
-            buffered = True
-        )
-
-        self.out_fifo = out_fifo = PacketFIFO(eth_udp_user_description(data_width),
-            payload_depth = 32,
-            param_depth = 4,
-            buffered = True
-        )
-
-        self.comb += [
-            raw_port.source.connect(in_fifo.sink, omit = {"src_port", "dst_port"}),
-            in_fifo.sink.src_port.eq(raw_port.source.dst_port),
-            in_fifo.sink.dst_port.eq(raw_port.source.src_port),
-            
-            out_fifo.source.connect(raw_port.sink),
-        ]
-
-        self.specials += Instance("boilerplate",
-            i_clk=ClockSignal("sys"),
-            i_rst=ResetSignal("sys"),
-
-            i_valid_rx=in_fifo.source.valid,
-            o_ready_rx=in_fifo.source.ready,
-            i_first_rx=in_fifo.source.first,
-            i_last_rx=in_fifo.source.last,
-            i_payload_rx=in_fifo.source.payload.data,
-
-            o_valid_tx=out_fifo.sink.valid,
-            i_ready_tx=out_fifo.sink.ready,
-            o_first_tx=out_fifo.sink.first,
-            o_last_tx=out_fifo.sink.last,
-            o_payload_tx=out_fifo.sink.payload.data
-        )
+        
+        self.top = NAFTop(data_width, ip_udp_core, manager_ip)
 
 # Build --------------------
 
@@ -145,11 +110,13 @@ def main():
     parser.add_argument("--flash",       action="store_true",      help="Flash bitstream")
     parser.add_argument("--ip-address",  default="192.168.1.20",   help="Ethernet IP address of the board (default: 192.168.1.20).")
     parser.add_argument("--mac-address", default="0x726b895bc2e2", help="Ethernet MAC address of the board (defaullt: 0x726b895bc2e2).")
+    parser.add_argument("--manager-ip",  default="192.168.1.1",    help="IP address of the server using the board as computation device.")
     args = parser.parse_args()
 
     # TODO: call clash here to generate verilog
+    clash.build()
 
-    soc     = NAF(ip_address=args.ip_address, mac_address=int(args.mac_address, 0))
+    soc     = NAFSoC(ip_address=args.ip_address, mac_address=int(args.mac_address, 0), manager_ip=args.manager_ip)
     builder = Builder(soc, output_dir="build", csr_csv="scripts/csr.csv")
     builder.build(build_name="naf", run=args.build)
 
