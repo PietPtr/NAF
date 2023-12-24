@@ -1,10 +1,12 @@
 # sudo `pwd`/.env/bin/python3.10 app.py
 
 import os
+from common import ip_hacks
 
 SIM = True
-
-arp_sim = "arping -c 1 -i tap0 -U -P 172.30.28.50 -S 192.168.50.111"
+own_ip = ip_hacks.probable_ip()
+# TODO: get defined IP from build products
+arp_sim = f"arping -c 1 -i tap0 -U -P 172.30.28.50 -S {own_ip}"
 arp_naf = ""
 arp = arp_sim if SIM else arp_naf
 print(os.popen(arp).read())
@@ -41,8 +43,9 @@ MAX_PACKETS = 100
 pkt_ctr = 0
     
 def packet_callback(packet):
-    # print(dir(packet))
-    print(hexdump(packet[UDP]))
+    payload = packet[UDP].payload
+    print(hexdump(payload))
+    print(f"length={len(payload)}")
 
     global pkt_ctr
     pkt_ctr += 1

@@ -47,7 +47,8 @@ constantUdpStreamer :: HiddenClockResetEnable dom =>
 constantUdpStreamer = mealy constantUdpStreamer' def
 
 data ConstantUdpStreamerState = ConstantUdpStreamerState {
-    payload_counter :: Unsigned 8
+    payload_counter :: Unsigned 8,
+    cycle_counter :: Unsigned 12
 } deriving (Generic, NFDataX, Default, Show)
 
 constantUdpStreamer' :: ConstantUdpStreamerState -> UdpTxIn -> (ConstantUdpStreamerState, UdpTxOut)
@@ -63,8 +64,8 @@ constantUdpStreamer' state (UdpTxIn { tx_ready = ready }) = (state', out)
             tx_last_be = 0b1111
         }
 
-        first = bitCoerce (payload_counter == 0)
-        last = bitCoerce (payload_counter == 100) -- 5 cycles so 20 byte packet?
+        first = bitCoerce (payload_counter == 0) .&. ready .&. valid
+        last = bitCoerce (payload_counter >= 40) .&. ready .&. valid -- 5 cycles so 20 byte packet?
         valid = 1
 
         payload_counter' = case (ready, valid, last) of
@@ -73,10 +74,11 @@ constantUdpStreamer' state (UdpTxIn { tx_ready = ready }) = (state', out)
             _ -> payload_counter
 
         -- payload = (0xfacade :: BitVector 24) ++# (pack payload_counter)
-        payload = (0 :: BitVector 24) ++# pack (payload_counter' + 1)
+        payload = (0 :: BitVector 24) ++# pack (payload_counter)
         
         state' = ConstantUdpStreamerState {
-            payload_counter = payload_counter'
+            payload_counter = payload_counter',
+            cycle_counter = cycle_counter + 1
         }
 
 

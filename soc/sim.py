@@ -21,7 +21,7 @@ from litex.soc.interconnect.packet import *
 from liteeth.phy.model import LiteEthPHYModel
 from liteeth.core import LiteEthUDPIPCore
 from liteeth.common import convert_ip, eth_udp_user_description
-from common import clash
+from common import clash, ip_hacks
 
 from top import NAFTop
 
@@ -82,7 +82,7 @@ def main():
     parser.add_argument("--trace-start",      default=0,              help="Cycle to start VCD tracing")
     parser.add_argument("--trace-end",        default=-1,             help="Cycle to end VCD tracing")
     parser.add_argument("--opt-level",        default="O0",           help="Compilation optimization level")
-    parser.add_argument("--manager-ip",       default="192.168.1.1",  help="IP address of machine running a NAF manager program.")
+    parser.add_argument("--manager-ip",       default=ip_hacks.probable_ip(),  help="IP address of machine running a NAF manager program.")
     parser.add_argument("--ip-address",       default="172.30.28.50",   help="Ethernet IP address of the board (default: 192.168.1.20).")
     parser.add_argument("--mac-address",      default="0x726b895bc2e2", help="Ethernet MAC address of the board (defaullt: 0x726b895bc2e2).")
     

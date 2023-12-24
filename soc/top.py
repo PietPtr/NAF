@@ -86,34 +86,3 @@ class NAFTop(LiteXModule):
             o_payload_tx=out_fifo.sink.payload.data,
             o_last_be_tx=out_fifo.sink.payload.last_be,
         )
-
-# Build --------------------
-
-def main():
-    parser = argparse.ArgumentParser(description="Take control of your ColorLight FPGA board with LiteX/LiteEth :)")
-    parser.add_argument("--build",       action="store_true",      help="Build bitstream")
-    parser.add_argument("--load",        action="store_true",      help="Load bitstream")
-    parser.add_argument("--flash",       action="store_true",      help="Flash bitstream")
-    parser.add_argument("--ip-address",  default="192.168.1.20",   help="Ethernet IP address of the board (default: 192.168.1.20).")
-    parser.add_argument("--mac-address", default="0x726b895bc2e2", help="Ethernet MAC address of the board (defaullt: 0x726b895bc2e2).")
-    parser.add_argument("--manager-ip",  default="192.168.1.1",    help="IP address of the server using the board as computation device.")
-    args = parser.parse_args()
-
-    # TODO: call clash here to generate verilog
-
-    soc     = NAF(ip_address=args.ip_address, mac_address=int(args.mac_address, 0), manager_ip=args.manager_ip)
-    builder = Builder(soc, output_dir="build", csr_csv="scripts/csr.csv")
-    builder.build(build_name="naf", run=args.build)
-
-    if args.load:
-        prog = soc.platform.create_programmer()
-        prog.load_bitstream(os.path.join(builder.gateware_dir, soc.build_name + ".svf"))
-
-    if args.flash:
-        prog = soc.platform.create_programmer()
-        # os.system("cp bit_to_flash.py build/gateware/")
-        os.system("cd build/gateware && chmod +x ./build_naf.sh && ./build_naf.sh")
-        prog.load_bitstream(os.path.join(builder.gateware_dir, soc.build_name + ".bit"))
-
-if __name__ == "__main__":
-    main()

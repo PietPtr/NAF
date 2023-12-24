@@ -113,7 +113,6 @@ def main():
     parser.add_argument("--manager-ip",  default="192.168.1.1",    help="IP address of the server using the board as computation device.")
     args = parser.parse_args()
 
-    # TODO: call clash here to generate verilog
     clash.build()
 
     soc     = NAFSoC(ip_address=args.ip_address, mac_address=int(args.mac_address, 0), manager_ip=args.manager_ip)

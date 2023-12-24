@@ -12,3 +12,4 @@ env/
 .env/
 migen/
 valentyusb/
+*.csv
