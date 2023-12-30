@@ -3,6 +3,8 @@
 {-# LANGUAGE NamedFieldPuns #-}
 module UDP where
 
+import GHC.TypeLits
+import Data.Proxy
 import Clash.Prelude hiding (last, (++))
 import qualified Data.List as List
 import Data.List ((++))
@@ -45,15 +47,15 @@ constantUdpStreamer :: HiddenClockResetEnable dom =>
     Signal dom UdpTxIn -> Signal dom UdpTxOut
 constantUdpStreamer = mealy constantUdpStreamer' def
 
-data SendState = Idle | Sending (Unsigned 8)
+data SendState n = Idle | Sending (Index n)
     deriving (Generic, NFDataX, Show, Eq)
 
-instance Default SendState where
+instance Default (SendState n) where
     def = Idle
 
 data ConstantUdpStreamerState = ConstantUdpStreamerState {
     cycle_counter :: Unsigned 12,
-    send_state :: SendState
+    send_state :: (SendState 256)
 } deriving (Generic, NFDataX, Default, Show)
 
 constantUdpStreamer' :: ConstantUdpStreamerState -> UdpTxIn -> (ConstantUdpStreamerState, UdpTxOut)
@@ -87,6 +89,47 @@ constantUdpStreamer' state (UdpTxIn { tx_ready = ready }) = (state', out)
             cycle_counter = cycle_counter + 1,
             send_state = send_state'
         }
+
+-- TODO: move to a different file, create a udp/ directory
+data SendVecState n = SendVecState {
+    sender_state :: SendState n,
+    payload :: Vec n (BitVector 8)
+}
+
+sendVec :: forall n. (KnownNat n) => SendVecState n -> (UdpTxIn, Maybe (Vec n (BitVector 8))) 
+    -> (SendVecState n, UdpTxOut)
+sendVec (SendVecState {..}) (UdpTxIn {..}, vector) = (state', udp_out)
+    where
+        vec_width = fromIntegral (natVal (Proxy @n)) :: Index n
+
+        sender_state' = case sender_state of
+            Idle -> if isJust vector then Sending vec_width else Idle
+            Sending 0 -> Idle
+            Sending n -> if tx_ready == 1 
+                then Sending (n - 1) 
+                else Sending n
+        
+        payload' = case vector of
+            (Just v) -> v
+            Nothing -> payload
+
+        udp_out = UdpTxOut {
+            tx_valid = bitCoerce $ sender_state /= Idle,
+            tx_first = bitCoerce $ sender_state == Sending vec_width,
+            tx_last = bitCoerce $ sender_state == Sending 0,
+            tx_payload = case sender_state of
+                Sending n -> payload !! n 
+                Idle -> 0xff
+        }
+
+        state' = SendVecState {
+            sender_state = sender_state',
+            payload = payload'
+        }
+
+
+packetCounter :: () -> UdpRxIn -> ((), UdpRxOut)
+packetCounter = undefined
 
 
 -- TODO: make sim lib with all these helper functions and some of the types above
