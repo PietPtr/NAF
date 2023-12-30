@@ -20,8 +20,7 @@ data UdpTxOut = UdpTxOut {
     tx_valid :: Bit,
     tx_first :: Bit,
     tx_last :: Bit,
-    tx_payload :: BitVector 32,
-    tx_last_be :: BitVector 4
+    tx_payload :: BitVector 8
 } deriving (Generic, NFDataX, Default, Show)
 
 instance Transaction UdpTxIn UdpTxOut where
@@ -31,8 +30,8 @@ data UdpRxIn = UdpRxIn {
     rx_valid :: Bit,
     rx_first :: Bit,
     rx_last :: Bit,
-    rx_payload :: BitVector 32,
-    rx_last_be :: BitVector 4
+    rx_payload :: BitVector 8,
+    rx_last_be :: Bit
 } deriving (Generic, NFDataX, Default, Show)
 
 data UdpRxOut = UdpRxOut {
@@ -46,9 +45,15 @@ constantUdpStreamer :: HiddenClockResetEnable dom =>
     Signal dom UdpTxIn -> Signal dom UdpTxOut
 constantUdpStreamer = mealy constantUdpStreamer' def
 
+data SendState = Idle | Sending (Unsigned 8)
+    deriving (Generic, NFDataX, Show, Eq)
+
+instance Default SendState where
+    def = Idle
+
 data ConstantUdpStreamerState = ConstantUdpStreamerState {
-    payload_counter :: Unsigned 8,
-    cycle_counter :: Unsigned 12
+    cycle_counter :: Unsigned 12,
+    send_state :: SendState
 } deriving (Generic, NFDataX, Default, Show)
 
 constantUdpStreamer' :: ConstantUdpStreamerState -> UdpTxIn -> (ConstantUdpStreamerState, UdpTxOut)
@@ -60,25 +65,27 @@ constantUdpStreamer' state (UdpTxIn { tx_ready = ready }) = (state', out)
             tx_valid = valid,
             tx_first = first,
             tx_last = last,
-            tx_payload = payload,
-            tx_last_be = 0b1111
+            tx_payload = payload
         }
 
-        first = bitCoerce (payload_counter == 0) .&. ready .&. valid
-        last = bitCoerce (payload_counter >= 40) .&. ready .&. valid -- 5 cycles so 20 byte packet?
-        valid = 1
+        packet_size = 32
 
-        payload_counter' = case (ready, valid, last) of
-            (1, 1, 0) -> payload_counter + 1
-            (1, 1, 1) -> 0
-            _ -> payload_counter
+        send_state' = case send_state of
+            Idle -> if cycle_counter == 0 then Sending packet_size else Idle
+            Sending 0 -> Idle
+            Sending n -> if ready == 1 then Sending (n - 1) else Sending n
 
-        -- payload = (0xfacade :: BitVector 24) ++# (pack payload_counter)
-        payload = (0 :: BitVector 24) ++# pack (payload_counter)
+        first = bitCoerce $ send_state == Sending packet_size
+        last = bitCoerce $ send_state == Sending 0
+        valid = bitCoerce $ send_state /= Idle
+
+        payload = case send_state of
+            Sending n -> pack n
+            Idle -> 0xff
         
         state' = ConstantUdpStreamerState {
-            payload_counter = payload_counter',
-            cycle_counter = cycle_counter + 1
+            cycle_counter = cycle_counter + 1,
+            send_state = send_state'
         }
 
 

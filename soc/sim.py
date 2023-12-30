@@ -62,13 +62,14 @@ class NAFSim(SoCMini):
         # Ethernet --------------------
         self.ethphy = ethphy = LiteEthPHYModel(self.platform.request("eth"))
 
-        data_width = 32
+        data_width = 8
 
         self.ip_udp_core = ip_udp_core = LiteEthUDPIPCore(
             phy         = self.ethphy,
             mac_address = mac_address,
             ip_address  = ip_address,
-            clk_freq    = self.clk_freq
+            clk_freq    = self.clk_freq,
+            dw = data_width
         )
 
         self.top = NAFTop(data_width, ip_udp_core, manager_ip)

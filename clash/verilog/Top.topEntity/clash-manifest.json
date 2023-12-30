@@ -6,7 +6,7 @@
         20,
         20
     ],
-    "hash": "7d40ecc06e32a1c2dca08b2281df5150756ba1d95429ea2e7daeb61ce4f4dc09",
+    "hash": "5acc51b86f88c4a36264c1dc6d9549b77d6635aeb96b999a30b38013907ed79a",
     "dependencies": {
         "transitive": []
     },
@@ -22,7 +22,7 @@
         },
         {
             "name": "main.v",
-            "sha256": "be25297a0f1e385fef234d8dccc92b8cf80624df772c79e13ffc362b8f73e389"
+            "sha256": "9935d53576c2e452baebdd318ed703912df7405462a1612d2b36d54c2922c071"
         }
     ],
     "top_component": {
@@ -74,17 +74,17 @@
             },
             {
                 "direction": "in",
-                "width": 32,
+                "width": 8,
                 "name": "udp_rx_payload",
                 "is_clock": false,
-                "type_name": "[31:0]"
+                "type_name": "[7:0]"
             },
             {
                 "direction": "in",
-                "width": 4,
+                "width": 1,
                 "name": "udp_rx_last_be",
                 "is_clock": false,
-                "type_name": "[3:0]"
+                "type_name": ""
             },
             {
                 "direction": "in",
@@ -123,17 +123,10 @@
             },
             {
                 "direction": "out",
-                "width": 32,
+                "width": 8,
                 "name": "udp_tx_payload",
                 "is_clock": false,
-                "type_name": "[31:0]"
-            },
-            {
-                "direction": "out",
-                "width": 4,
-                "name": "udp_tx_last_be",
-                "is_clock": false,
-                "type_name": "[3:0]"
+                "type_name": "[7:0]"
             }
         ],
         "name": "main"

@@ -10,8 +10,8 @@ module main
     , input  udp_rx_valid
     , input  udp_rx_first
     , input  udp_rx_last
-    , input [31:0] udp_rx_payload
-    , input [3:0] udp_rx_last_be
+    , input [7:0] udp_rx_payload
+    , input  udp_rx_last_be
     , input  udp_tx_ready
 
       // Outputs
@@ -19,28 +19,37 @@ module main
     , output wire  udp_tx_valid
     , output wire  udp_tx_first
     , output wire  udp_tx_last
-    , output wire [31:0] udp_tx_payload
-    , output wire [3:0] udp_tx_last_be
+    , output wire [7:0] udp_tx_payload
     );
   reg  c$app_arg = 1'b0;
-  // ../clash/UDP.hs:(45,1)-(46,45)
-  reg [19:0] c$ds_app_arg = {8'd0,   12'd0};
-  wire [38:0] result;
-  // ../clash/UDP.hs:55:1-20
-  wire [0:0] c$last_app_arg;
+  // ../clash/UDP.hs:(44,1)-(45,45)
+  reg [20:0] c$ds_app_arg = {12'd0,   {1'b0,8'bxxxxxxxx}};
+  wire [10:0] result;
+  wire [31:0] result_0;
   wire [7:0] c$case_alt;
-  wire [7:0] c$case_alt_0;
-  wire [7:0] c$app_arg_0;
-  reg [0:0] c$app_arg_1;
-  wire [58:0] result_0;
-  // ../clash/UDP.hs:55:1-20
-  wire  last;
-  // ../clash/UDP.hs:55:1-20
-  wire [7:0] payload_counter1;
-  reg [38:0] c$app_arg_2 = {1'b0,   1'b0,   1'b0,   32'd0,   4'd0};
-  wire [39:0] udp;
-  wire [39:0] udp_0;
-  wire [38:0] udp_tx;
+  wire [0:0] c$case_alt_0;
+  reg [0:0] c$case_alt_1;
+  wire [0:0] c$case_alt_2;
+  reg [0:0] c$case_alt_3;
+  wire [0:0] c$case_alt_4;
+  wire [8:0] c$case_alt_5;
+  reg [8:0] c$case_alt_6;
+  reg [8:0] c$case_alt_7;
+  wire [8:0] c$case_alt_8;
+  // ../clash/UDP.hs:60:1-20
+  wire [11:0] cycle_counter1;
+  reg [10:0] c$app_arg_0 = {1'b0,   1'b0,   1'b0,   8'd0};
+  wire [12:0] udp;
+  wire [8:0] c$case_alt_selection_1;
+  wire [8:0] c$case_alt_selection_4;
+  wire [7:0] c$case_alt_selection_8;
+  wire [8:0] c$case_alt_selection_11;
+  wire [7:0] c$case_alt_selection_15;
+  wire [8:0] c$case_alt_selection_18;
+  wire [8:0] c$case_alt_selection_21;
+  wire [7:0] c$case_alt_selection_25;
+  wire [11:0] udp_0;
+  wire [10:0] udp_tx;
 
   assign udp = {{udp_rx_valid,   udp_rx_first,
                  udp_rx_last,   udp_rx_payload,
@@ -59,65 +68,101 @@ module main
   // register begin
   always @(posedge clock or  posedge  reset) begin : c$ds_app_arg_register
     if ( reset) begin
-      c$ds_app_arg <= {8'd0,   12'd0};
+      c$ds_app_arg <= {12'd0,   {1'b0,8'bxxxxxxxx}};
     end else if (enable) begin
-      c$ds_app_arg <= result_0[58:39];
+      c$ds_app_arg <= result_0[31:11];
     end
   end
   // register end
 
-  assign result = result_0[38:0];
+  assign result = result_0[10:0];
 
-  assign c$last_app_arg = (payload_counter1 >= 8'd40) ? 1'b1 : 1'b0;
+  assign result_0 = {{cycle_counter1 + 12'd1,
+                      c$case_alt_5},   {(c$case_alt_4),
+                                        (c$case_alt_2),   (c$case_alt_0),
+                                        c$case_alt}};
 
-  assign c$case_alt = (last == 1'b1) ? 8'd0 : payload_counter1;
+  assign c$case_alt_selection_1 = c$ds_app_arg[8:0];
 
-  assign c$case_alt_0 = (last == 1'b0) ? (payload_counter1 + 8'd1) : c$case_alt;
+  assign c$case_alt = c$case_alt_selection_1[8:8] ? ((c$ds_app_arg[7:0])) : 8'b11111111;
 
-  assign c$app_arg_0 = (c$app_arg == 1'b1) ? c$case_alt_0 : payload_counter1;
+  assign c$case_alt_selection_4 = c$ds_app_arg[8:0];
+
+  assign c$case_alt_0 = c$case_alt_selection_4[8:8] ? c$case_alt_1 : 1'b0;
+
+  assign c$case_alt_selection_8 = c$ds_app_arg[7:0];
 
   always @(*) begin
-    case(payload_counter1)
-      8'd0 : c$app_arg_1 = 1'b1;
-      default : c$app_arg_1 = 1'b0;
+    case(c$case_alt_selection_8)
+      8'd0 : c$case_alt_1 = 1'b1;
+      default : c$case_alt_1 = 1'b0;
     endcase
   end
 
-  assign result_0 = {{c$app_arg_0,
-                      c$ds_app_arg[11:0] + 12'd1},   {1'b1,
-                                                      (((c$app_arg_1)) & c$app_arg) & 1'b1,   last,
-                                                      {24'b000000000000000000000000,((payload_counter1))},
-                                                      4'b1111}};
+  assign c$case_alt_selection_11 = c$ds_app_arg[8:0];
 
-  assign last = (((c$last_app_arg)) & c$app_arg) & 1'b1;
+  assign c$case_alt_2 = c$case_alt_selection_11[8:8] ? c$case_alt_3 : 1'b0;
 
-  assign payload_counter1 = c$ds_app_arg[19:12];
+  assign c$case_alt_selection_15 = c$ds_app_arg[7:0];
+
+  always @(*) begin
+    case(c$case_alt_selection_15)
+      8'd32 : c$case_alt_3 = 1'b1;
+      default : c$case_alt_3 = 1'b0;
+    endcase
+  end
+
+  assign c$case_alt_selection_18 = c$ds_app_arg[8:0];
+
+  assign c$case_alt_4 = c$case_alt_selection_18[8:8] ? 1'b1 : 1'b0;
+
+  assign c$case_alt_selection_21 = c$ds_app_arg[8:0];
+
+  assign c$case_alt_5 = c$case_alt_selection_21[8:8] ? c$case_alt_6 : c$case_alt_7;
+
+  assign c$case_alt_selection_25 = c$ds_app_arg[7:0];
+
+  always @(*) begin
+    case(c$case_alt_selection_25)
+      8'd0 : c$case_alt_6 = {1'b0,8'bxxxxxxxx};
+      default : c$case_alt_6 = c$case_alt_8;
+    endcase
+  end
+
+  always @(*) begin
+    case(cycle_counter1)
+      12'd0 : c$case_alt_7 = {1'b1,8'd32};
+      default : c$case_alt_7 = {1'b0,8'bxxxxxxxx};
+    endcase
+  end
+
+  assign c$case_alt_8 = (c$app_arg == 1'b1) ? {1'b1,c$ds_app_arg[7:0] - 8'd1} : c$ds_app_arg[8:0];
+
+  assign cycle_counter1 = c$ds_app_arg[20:9];
 
   // register begin
-  always @(posedge clock or  posedge  reset) begin : c$app_arg_2_register
+  always @(posedge clock or  posedge  reset) begin : c$app_arg_0_register
     if ( reset) begin
-      c$app_arg_2 <= {1'b0,   1'b0,   1'b0,   32'd0,   4'd0};
+      c$app_arg_0 <= {1'b0,   1'b0,   1'b0,   8'd0};
     end else if (enable) begin
-      c$app_arg_2 <= result;
+      c$app_arg_0 <= result;
     end
   end
   // register end
 
-  assign udp_0 = {1'b1,   c$app_arg_2};
+  assign udp_0 = {1'b1,   c$app_arg_0};
 
-  assign udp_rx_ready = udp_0[39:39];
+  assign udp_rx_ready = udp_0[11:11];
 
-  assign udp_tx = udp_0[38:0];
+  assign udp_tx = udp_0[10:0];
 
-  assign udp_tx_valid = udp_tx[38:38];
+  assign udp_tx_valid = udp_tx[10:10];
 
-  assign udp_tx_first = udp_tx[37:37];
+  assign udp_tx_first = udp_tx[9:9];
 
-  assign udp_tx_last = udp_tx[36:36];
+  assign udp_tx_last = udp_tx[8:8];
 
-  assign udp_tx_payload = udp_tx[35:4];
-
-  assign udp_tx_last_be = udp_tx[3:0];
+  assign udp_tx_payload = udp_tx[7:0];
 
 
 endmodule
