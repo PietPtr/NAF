@@ -4,6 +4,7 @@ import Clash.Prelude
 import qualified UDP 
 import qualified ConstantStreamer
 import qualified UdpCounters
+import qualified VecAsUdp
 
 system :: HiddenClockResetEnable dom => UDP.UdpTop dom ->
     Signal dom (UDP.UdpRxIn, UDP.UdpTxIn) -> Signal dom (UDP.UdpRxOut, UDP.UdpTxOut)
@@ -32,4 +33,4 @@ topEntity ::
      -> Enable System
      -> Signal System (UDP.UdpRxIn, UDP.UdpTxIn)
      -> Signal System (UDP.UdpRxOut, UDP.UdpTxOut)
-topEntity = exposeClockResetEnable (system UdpCounters.asTop)
+topEntity = exposeClockResetEnable (system VecAsUdp.asTop)
