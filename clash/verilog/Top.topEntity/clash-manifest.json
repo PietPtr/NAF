@@ -6,7 +6,7 @@
         20,
         20
     ],
-    "hash": "cd5b10147397b2011ecf792cbf60b12ef42955288a755fa9a9989c66ef044333",
+    "hash": "a98858a5cbe87ea2bfa7a77761fae83c08288ca4536a46aa3d87cd12162dc20b",
     "dependencies": {
         "transitive": []
     },
@@ -22,7 +22,7 @@
         },
         {
             "name": "main.v",
-            "sha256": "9935d53576c2e452baebdd318ed703912df7405462a1612d2b36d54c2922c071"
+            "sha256": "7181c6bdbaa867b3f0deae4b711fceb2a2ae67e9d7750926170add77f2d3590a"
         }
     ],
     "top_component": {

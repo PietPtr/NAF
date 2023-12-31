@@ -21,33 +21,61 @@ module main
     , output wire  udp_tx_last
     , output wire [7:0] udp_tx_payload
     );
-  reg  c$app_arg = 1'b0;
-  // ../clash/UDP.hs:(44,1)-(45,45)
-  reg [20:0] c$ds_app_arg = {12'd0,   {1'b0,8'bxxxxxxxx}};
+  reg [10:0] c$app_arg = {1'b0,   1'b0,   1'b0,   8'd0};
+  // ../clash/udp/VecAsUdp.hs:(12,1)-(14,28)
+  reg [67:0] c$ds_app_arg = {{1'b0,3'bxxx},   {8'd0,   8'd0,   8'd0,   8'd0,   8'd0,   8'd0,   8'd0,
+                   8'd0}};
   wire [10:0] result;
-  wire [31:0] result_0;
-  wire [7:0] c$case_alt;
-  wire [0:0] c$case_alt_0;
+  wire [78:0] c$case_alt;
+  wire [7:0] c$app_arg_0;
+  wire [7:0] c$case_alt_0;
+  wire [0:0] c$app_arg_1;
   reg [0:0] c$case_alt_1;
+  wire [0:0] c$app_arg_2;
   wire [0:0] c$case_alt_2;
-  reg [0:0] c$case_alt_3;
-  wire [0:0] c$case_alt_4;
-  wire [8:0] c$case_alt_5;
-  reg [8:0] c$case_alt_6;
-  reg [8:0] c$case_alt_7;
-  wire [8:0] c$case_alt_8;
-  // ../clash/UDP.hs:60:1-20
-  wire [11:0] cycle_counter1;
-  reg [10:0] c$app_arg_0 = {1'b0,   1'b0,   1'b0,   8'd0};
+  wire [0:0] c$app_arg_3;
+  wire [63:0] c$app_arg_4;
+  // ../clash/udp/VecAsUdp.hs:(22,1)-(23,33)
+  wire [63:0] v;
+  wire [3:0] c$app_arg_5;
+  reg [3:0] c$case_alt_3;
+  wire [3:0] c$case_alt_4;
+  wire [3:0] c$case_alt_5;
+  // ../clash/Top.hs:(8,1)-(9,84)
+  wire [64:0] c$ds_case_alt;
+  // ../clash/udp/UdpCounters.hs:(30,1)-(31,41)
+  reg [31:0] c$ds_app_arg_0 = (32'd0);
+  wire [32:0] result_0;
+  wire [31:0] c$app_arg_6;
+  wire [64:0] c$case_alt_6;
+  // ../clash/udp/UdpCounters.hs:(42,1)-(43,41)
+  reg [32:0] c$ds_app_arg_1 = {32'd0,   1'd0};
+  wire [32:0] result_1;
+  wire [65:0] c$case_alt_7;
+  wire [0:0] c$app_arg_7;
+  wire [0:0] c$case_alt_8;
+  wire [0:0] c$case_alt_9;
+  wire [0:0] c$case_alt_10;
+  wire [0:0] c$case_alt_11;
+  wire [31:0] c$app_arg_8;
+  // ../clash/udp/UdpCounters.hs:54:1-15
+  wire [0:0] state;
+  wire [31:0] c$case_alt_12;
+  wire [31:0] c$case_alt_13;
+  wire  c$case_scrut;
+  // ../clash/udp/UdpCounters.hs:54:1-15
+  wire [31:0] payload_counter;
+  wire  c$case_scrut_0;
   wire [12:0] udp;
-  wire [8:0] c$case_alt_selection_1;
-  wire [8:0] c$case_alt_selection_4;
-  wire [7:0] c$case_alt_selection_8;
-  wire [8:0] c$case_alt_selection_11;
-  wire [7:0] c$case_alt_selection_15;
-  wire [8:0] c$case_alt_selection_18;
-  wire [8:0] c$case_alt_selection_21;
-  wire [7:0] c$case_alt_selection_25;
+  wire [3:0] c$app_arg_selection_1;
+  wire [2:0] c$i_0;
+  wire [63:0] c$vecFlat;
+  wire [3:0] c$app_arg_selection_4;
+  wire [2:0] c$case_alt_selection_2;
+  wire [3:0] c$app_arg_selection_7;
+  wire [3:0] c$app_arg_selection_10;
+  wire [3:0] c$app_arg_selection_14;
+  wire [2:0] c$case_alt_selection_7;
   wire [11:0] udp_0;
   wire [10:0] udp_tx;
 
@@ -55,12 +83,15 @@ module main
                  udp_rx_last,   udp_rx_payload,
                  udp_rx_last_be},   udp_tx_ready};
 
+  assign udp_0 = {result_0[32:32] | result_1[32:32],
+                  c$app_arg};
+
   // register begin
   always @(posedge clock or  posedge  reset) begin : c$app_arg_register
     if ( reset) begin
-      c$app_arg <= 1'b0;
+      c$app_arg <= {1'b0,   1'b0,   1'b0,   8'd0};
     end else if (enable) begin
-      c$app_arg <= udp[0:0];
+      c$app_arg <= result;
     end
   end
   // register end
@@ -68,89 +99,140 @@ module main
   // register begin
   always @(posedge clock or  posedge  reset) begin : c$ds_app_arg_register
     if ( reset) begin
-      c$ds_app_arg <= {12'd0,   {1'b0,8'bxxxxxxxx}};
+      c$ds_app_arg <= {{1'b0,3'bxxx},   {8'd0,   8'd0,   8'd0,   8'd0,   8'd0,   8'd0,   8'd0,
+                     8'd0}};
     end else if (enable) begin
-      c$ds_app_arg <= result_0[31:11];
+      c$ds_app_arg <= c$case_alt[78:11];
     end
   end
   // register end
 
-  assign result = result_0[10:0];
+  assign result = c$case_alt[10:0];
 
-  assign result_0 = {{cycle_counter1 + 12'd1,
-                      c$case_alt_5},   {(c$case_alt_4),
-                                        (c$case_alt_2),   (c$case_alt_0),
-                                        c$case_alt}};
+  assign c$case_alt = {{c$app_arg_5,
+                        c$app_arg_4},   {(c$app_arg_3),
+                                         (c$app_arg_2),   (c$app_arg_1),
+                                         c$app_arg_0}};
 
-  assign c$case_alt_selection_1 = c$ds_app_arg[8:0];
+  assign c$app_arg_selection_1 = c$ds_app_arg[67:64];
 
-  assign c$case_alt = c$case_alt_selection_1[8:8] ? ((c$ds_app_arg[7:0])) : 8'b11111111;
+  assign c$app_arg_0 = c$app_arg_selection_1[3:3] ? c$case_alt_0 : 8'b11111111;
 
-  assign c$case_alt_selection_4 = c$ds_app_arg[8:0];
+  assign c$i_0 = c$ds_app_arg[66:64];
 
-  assign c$case_alt_0 = c$case_alt_selection_4[8:8] ? c$case_alt_1 : 1'b0;
+  assign c$vecFlat = c$ds_app_arg[63:0];
 
-  assign c$case_alt_selection_8 = c$ds_app_arg[7:0];
+  // index begin
+  wire [7:0] vecArray [0:8-1];
+  genvar i;
+  generate
+  for (i=0; i < 8; i=i+1) begin : mk_array
+    assign vecArray[(8-1)-i] = c$vecFlat[i*8+:8];
+  end
+  endgenerate
+  assign c$case_alt_0 = vecArray[($unsigned({{(64-3) {1'b0}},c$i_0}))];
+  // index end
+
+  assign c$app_arg_selection_4 = c$ds_app_arg[67:64];
+
+  assign c$app_arg_1 = c$app_arg_selection_4[3:3] ? c$case_alt_1 : 1'b0;
+
+  assign c$case_alt_selection_2 = c$ds_app_arg[66:64];
 
   always @(*) begin
-    case(c$case_alt_selection_8)
-      8'd0 : c$case_alt_1 = 1'b1;
+    case(c$case_alt_selection_2)
+      3'd0 : c$case_alt_1 = 1'b1;
       default : c$case_alt_1 = 1'b0;
     endcase
   end
 
-  assign c$case_alt_selection_11 = c$ds_app_arg[8:0];
+  assign c$app_arg_selection_7 = c$ds_app_arg[67:64];
 
-  assign c$case_alt_2 = c$case_alt_selection_11[8:8] ? c$case_alt_3 : 1'b0;
+  assign c$app_arg_2 = c$app_arg_selection_7[3:3] ? c$case_alt_2 : 1'b0;
 
-  assign c$case_alt_selection_15 = c$ds_app_arg[7:0];
+  assign c$case_alt_2 = (c$ds_app_arg[66:64] == 3'd8) ? 1'b1 : 1'b0;
+
+  assign c$app_arg_selection_10 = c$ds_app_arg[67:64];
+
+  assign c$app_arg_3 = c$app_arg_selection_10[3:3] ? 1'b1 : 1'b0;
+
+  assign c$app_arg_4 = c$ds_case_alt[64:64] ? v : c$ds_app_arg[63:0];
+
+  assign v = c$ds_case_alt[63:0];
+
+  assign c$app_arg_selection_14 = c$ds_app_arg[67:64];
+
+  assign c$app_arg_5 = c$app_arg_selection_14[3:3] ? c$case_alt_3 : c$case_alt_4;
+
+  assign c$case_alt_selection_7 = c$ds_app_arg[66:64];
 
   always @(*) begin
-    case(c$case_alt_selection_15)
-      8'd32 : c$case_alt_3 = 1'b1;
-      default : c$case_alt_3 = 1'b0;
+    case(c$case_alt_selection_7)
+      3'd0 : c$case_alt_3 = {1'b0,3'bxxx};
+      default : c$case_alt_3 = c$case_alt_5;
     endcase
   end
 
-  assign c$case_alt_selection_18 = c$ds_app_arg[8:0];
+  assign c$case_alt_4 = c$ds_case_alt[64:64] ? {1'b1,3'd8} : {1'b0,3'bxxx};
 
-  assign c$case_alt_4 = c$case_alt_selection_18[8:8] ? 1'b1 : 1'b0;
+  assign c$case_alt_5 = (udp[0:0] == 1'b1) ? {1'b1,c$ds_app_arg[66:64] - 3'd1} : c$ds_app_arg[67:64];
 
-  assign c$case_alt_selection_21 = c$ds_app_arg[8:0];
-
-  assign c$case_alt_5 = c$case_alt_selection_21[8:8] ? c$case_alt_6 : c$case_alt_7;
-
-  assign c$case_alt_selection_25 = c$ds_app_arg[7:0];
-
-  always @(*) begin
-    case(c$case_alt_selection_25)
-      8'd0 : c$case_alt_6 = {1'b0,8'bxxxxxxxx};
-      default : c$case_alt_6 = c$case_alt_8;
-    endcase
-  end
-
-  always @(*) begin
-    case(cycle_counter1)
-      12'd0 : c$case_alt_7 = {1'b1,8'd32};
-      default : c$case_alt_7 = {1'b0,8'bxxxxxxxx};
-    endcase
-  end
-
-  assign c$case_alt_8 = (c$app_arg == 1'b1) ? {1'b1,c$ds_app_arg[7:0] - 8'd1} : c$ds_app_arg[8:0];
-
-  assign cycle_counter1 = c$ds_app_arg[20:9];
+  assign c$ds_case_alt = ((udp[11:11] & udp[12:12]) == 1'b1) ? {1'b1,((({((result_0[31:0])),((result_1[31:0]))})))} : {1'b0,64'bxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx};
 
   // register begin
-  always @(posedge clock or  posedge  reset) begin : c$app_arg_0_register
+  always @(posedge clock or  posedge  reset) begin : c$ds_app_arg_0_register
     if ( reset) begin
-      c$app_arg_0 <= {1'b0,   1'b0,   1'b0,   8'd0};
+      c$ds_app_arg_0 <= (32'd0);
     end else if (enable) begin
-      c$app_arg_0 <= result;
+      c$ds_app_arg_0 <= c$case_alt_6[64:33];
     end
   end
   // register end
 
-  assign udp_0 = {1'b1,   c$app_arg_0};
+  assign result_0 = c$case_alt_6[32:0];
+
+  assign c$app_arg_6 = ((udp[11:11] & udp[12:12]) == 1'b1) ? (c$ds_app_arg_0 + 32'd1) : c$ds_app_arg_0;
+
+  assign c$case_alt_6 = {c$app_arg_6,   {1'b1,
+                                         c$ds_app_arg_0}};
+
+  // register begin
+  always @(posedge clock or  posedge  reset) begin : c$ds_app_arg_1_register
+    if ( reset) begin
+      c$ds_app_arg_1 <= {32'd0,   1'd0};
+    end else if (enable) begin
+      c$ds_app_arg_1 <= c$case_alt_7[65:33];
+    end
+  end
+  // register end
+
+  assign result_1 = c$case_alt_7[32:0];
+
+  assign c$case_alt_7 = {{c$app_arg_8,   c$app_arg_7},   {1'b1,   payload_counter}};
+
+  assign c$app_arg_7 = state ? c$case_alt_8 : c$case_alt_9;
+
+  assign c$case_alt_8 = c$case_scrut_0 ? c$case_alt_10 : 1'd1;
+
+  assign c$case_alt_9 = c$case_scrut_0 ? c$case_alt_11 : 1'd0;
+
+  assign c$case_alt_10 = (udp[10:10] == 1'b1) ? 1'd0 : 1'd1;
+
+  assign c$case_alt_11 = c$case_scrut ? 1'd1 : 1'd0;
+
+  assign c$app_arg_8 = state ? c$case_alt_13 : c$case_alt_12;
+
+  assign state = c$ds_app_arg_1[0:0];
+
+  assign c$case_alt_12 = c$case_scrut ? c$case_alt_13 : payload_counter;
+
+  assign c$case_alt_13 = c$case_scrut_0 ? (payload_counter + 32'd1) : payload_counter;
+
+  assign c$case_scrut = udp[11:11] == 1'b1;
+
+  assign payload_counter = c$ds_app_arg_1[32:1];
+
+  assign c$case_scrut_0 = udp[12:12] == 1'b1;
 
   assign udp_rx_ready = udp_0[11:11];
 

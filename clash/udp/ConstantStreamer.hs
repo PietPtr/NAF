@@ -1,7 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
-module UDP where
+module ConstantStreamer where
 
 import GHC.TypeLits
 import Data.Proxy
@@ -9,49 +9,14 @@ import Clash.Prelude hiding (last, (++))
 import qualified Data.List as List
 import Data.List ((++))
 import Data.Maybe
+import UDP
 
-class Transaction inp out where
-    -- Given the interface, did a transaction happen at this cycle?
-    didTransact :: inp -> out -> Bit
-
-data UdpTxIn = UdpTxIn {
-    tx_ready :: Bit
-} deriving (Generic, NFDataX, Default, Show)
-
-data UdpTxOut = UdpTxOut {
-    tx_valid :: Bit,
-    tx_first :: Bit,
-    tx_last :: Bit,
-    tx_payload :: BitVector 8
-} deriving (Generic, NFDataX, Default, Show)
-
-instance Transaction UdpTxIn UdpTxOut where
-    didTransact (UdpTxIn {..}) (UdpTxOut {..}) = tx_ready .&. tx_valid
-
-data UdpRxIn = UdpRxIn {
-    rx_valid :: Bit,
-    rx_first :: Bit,
-    rx_last :: Bit,
-    rx_payload :: BitVector 8,
-    rx_last_be :: Bit
-} deriving (Generic, NFDataX, Default, Show)
-
-data UdpRxOut = UdpRxOut {
-    rx_ready :: Bit
-} deriving (Generic, NFDataX, Default, Show)
-
-instance Transaction UdpRxIn UdpRxOut where
-    didTransact (UdpRxIn {..}) (UdpRxOut {..}) = rx_ready .&. rx_valid
+asTop :: HiddenClockResetEnable dom => UdpTop dom
+asTop _ udp_tx_in = ((pure $ UdpRxOut {rx_ready = 1}), constantUdpStreamer udp_tx_in)
 
 constantUdpStreamer :: HiddenClockResetEnable dom =>
     Signal dom UdpTxIn -> Signal dom UdpTxOut
 constantUdpStreamer = mealy constantUdpStreamer' def
-
-data SendState n = Idle | Sending (Index n)
-    deriving (Generic, NFDataX, Show, Eq)
-
-instance Default (SendState n) where
-    def = Idle
 
 data ConstantUdpStreamerState = ConstantUdpStreamerState {
     cycle_counter :: Unsigned 12,
@@ -89,48 +54,6 @@ constantUdpStreamer' state (UdpTxIn { tx_ready = ready }) = (state', out)
             cycle_counter = cycle_counter + 1,
             send_state = send_state'
         }
-
--- TODO: move to a different file, create a udp/ directory
-data SendVecState n = SendVecState {
-    sender_state :: SendState n,
-    payload :: Vec n (BitVector 8)
-}
-
-sendVec :: forall n. (KnownNat n) => SendVecState n -> (UdpTxIn, Maybe (Vec n (BitVector 8))) 
-    -> (SendVecState n, UdpTxOut)
-sendVec (SendVecState {..}) (UdpTxIn {..}, vector) = (state', udp_out)
-    where
-        vec_width = fromIntegral (natVal (Proxy @n)) :: Index n
-
-        sender_state' = case sender_state of
-            Idle -> if isJust vector then Sending vec_width else Idle
-            Sending 0 -> Idle
-            Sending n -> if tx_ready == 1 
-                then Sending (n - 1) 
-                else Sending n
-        
-        payload' = case vector of
-            (Just v) -> v
-            Nothing -> payload
-
-        udp_out = UdpTxOut {
-            tx_valid = bitCoerce $ sender_state /= Idle,
-            tx_first = bitCoerce $ sender_state == Sending vec_width,
-            tx_last = bitCoerce $ sender_state == Sending 0,
-            tx_payload = case sender_state of
-                Sending n -> payload !! n 
-                Idle -> 0xff
-        }
-
-        state' = SendVecState {
-            sender_state = sender_state',
-            payload = payload'
-        }
-
-
-packetCounter :: () -> UdpRxIn -> ((), UdpRxOut)
-packetCounter = undefined
-
 
 -- TODO: make sim lib with all these helper functions and some of the types above
 testInput :: [UdpTxIn]

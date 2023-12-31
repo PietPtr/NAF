@@ -38,18 +38,42 @@ import socket
 #     print("\nStopped packet capture.")
 
 from scapy.all import *
+import threading
+import time
+import socket
 
-MAX_PACKETS = 100
+
+MAX_PACKETS = 30
 pkt_ctr = 0
+
+# TODO: get these from some common config
+IP_ADDR = "172.30.28.50" 
+UDP_PORT = 50059
     
 def packet_callback(packet):
-    payload = packet[UDP].payload
-    print(hexdump(payload))
-    print(f"length={len(payload)}")
+    if IP in packet and UDP in packet:
+        if packet[IP].src == IP_ADDR:
+            # Do something with the packet
+            print(packet.summary())
+            payload = packet[UDP].payload
+            print(hexdump(payload))
+            print(f"length={len(payload)}")
 
-    global pkt_ctr
-    pkt_ctr += 1
-    if pkt_ctr > MAX_PACKETS:
-        exit()
+            global pkt_ctr
+            pkt_ctr += 1
+            if pkt_ctr > MAX_PACKETS:
+                exit()
 
-sniff(iface="tap0", prn=packet_callback)
+def start_sniffing():
+    sniff(iface="tap0", prn=packet_callback)
+
+threading.Thread(target=start_sniffing).start()
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+while True:
+    time.sleep(1)
+
+    message = b"Hello, UDP!"
+    sock.sendto(message, (IP_ADDR, UDP_PORT))
+    print(f"{time.time()} Sent message.")

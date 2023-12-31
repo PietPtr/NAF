@@ -1,2 +1,2 @@
 #!/bin/bash
-clash ../clash/Top.hs -i../clash/ --verilog -outputdir ../clash/verilog/
+clash ../clash/Top.hs -i../clash/ -i../clash/udp/ --verilog -outputdir ../clash/verilog/

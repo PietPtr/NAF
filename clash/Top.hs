@@ -1,17 +1,18 @@
 module Top where 
 
 import Clash.Prelude
-import qualified UDP as UDP
+import qualified UDP 
+import qualified ConstantStreamer
+import qualified UdpCounters
 
-system :: HiddenClockResetEnable dom =>
+system :: HiddenClockResetEnable dom => UDP.UdpTop dom ->
     Signal dom (UDP.UdpRxIn, UDP.UdpTxIn) -> Signal dom (UDP.UdpRxOut, UDP.UdpTxOut)
-system inputs = outputs
+system udp_top inputs = outputs
     where
         (udp_rx_in, udp_tx_in) = unbundle inputs
         udp_tx_in_d = register def udp_tx_in
-        -- TODO: Better generic top, make it easy to interchange business logic
-        udp_rx_out = pure $ UDP.UdpRxOut { UDP.rx_ready = 1 }
-        udp_tx_out = UDP.constantUdpStreamer udp_tx_in_d
+        -- TODO: Better generic top type, make it easy to interchange business logic
+        (udp_rx_out, udp_tx_out) = udp_top udp_rx_in udp_tx_in
         --
         udp_tx_out_d = register def udp_tx_out 
         outputs = bundle (udp_rx_out, udp_tx_out_d)
@@ -31,4 +32,4 @@ topEntity ::
      -> Enable System
      -> Signal System (UDP.UdpRxIn, UDP.UdpTxIn)
      -> Signal System (UDP.UdpRxOut, UDP.UdpTxOut)
-topEntity = exposeClockResetEnable system
+topEntity = exposeClockResetEnable (system UdpCounters.asTop)
