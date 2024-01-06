@@ -63,9 +63,6 @@ simulateUdpStreamer :: Int -> [(UdpTxIn, UdpTxOut)]
 simulateUdpStreamer n = List.zip testInput output
     where output = List.take n $ simulate @System constantUdpStreamer testInput
 
-filterTransactions :: (Transaction inp out) => [(inp, out)] -> [Maybe (inp, out)]
-filterTransactions = List.map (\(inp, out) -> if didTransact inp out == 1 then Just (inp, out) else Nothing ) 
-
 prettyPerCycleFiltered :: (a -> Bool) -> (a -> String) -> [a] -> [String]
 prettyPerCycleFiltered filter formatter waves = List.map (\(cycle, wave) -> show cycle ++ ": " ++ formatter wave) with_cycles_filtered
     where

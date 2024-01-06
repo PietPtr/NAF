@@ -3,15 +3,12 @@
 {-# LANGUAGE NamedFieldPuns #-}
 module UDP where
 
+import Transactions
 import Clash.Prelude hiding (last, (++))
 
 type UdpTop dom = 
     Signal dom (UDP.UdpRxIn) -> Signal dom (UDP.UdpTxIn) ->
     (Signal dom (UDP.UdpRxOut), Signal dom (UDP.UdpTxOut))
-
-class Transaction inp out where
-    -- Given the interface, did a transaction happen at this cycle?
-    didTransact :: inp -> out -> Bit
 
 data UdpTxIn = UdpTxIn {
     tx_ready :: Bit

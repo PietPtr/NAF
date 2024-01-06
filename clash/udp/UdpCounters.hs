@@ -1,12 +1,12 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
-module UdpCounters where
+module UdpCounters (asTop, packetCounter, payloadCounter) where
 
 import Clash.Prelude
 
 import UDP hiding (Idle)
-import VecAsUdp
+import qualified VecAsUdp
 import qualified Data.List as L
 
 import Debug.Trace
