@@ -10,6 +10,7 @@ import qualified Data.List as List
 import Data.List ((++))
 import Data.Maybe
 import UDP
+import Transactions
 
 asTop :: HiddenClockResetEnable dom => UdpTop dom
 asTop _ udp_tx_in = ((pure $ UdpRxOut {rx_ready = 1}), constantUdpStreamer udp_tx_in)

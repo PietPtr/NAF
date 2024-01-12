@@ -52,7 +52,7 @@ sendVec' (SendVecState {..}) (UdpTxIn {..}, vector) = (state', udp_out)
             tx_valid = bitCoerce $ sender_state /= Idle,
             tx_first = bitCoerce $ sender_state == Sending 0,
             tx_last = bitCoerce $ sender_state == Sending vec_width,
-            tx_payload = case sender_state of -- TODO: error in ready handling
+            tx_payload = case sender_state of
                 Sending n -> payload !! n 
                 Idle -> 0xff
         }
@@ -63,7 +63,7 @@ sendVec' (SendVecState {..}) (UdpTxIn {..}, vector) = (state', udp_out)
         }
 
 testInput :: [UdpTxIn]
-testInput = L.map UdpTxIn [0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1]
+testInput = L.map UdpTxIn [0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1]
 
 deadbeefStream = L.zip testInput (simulate @System dut testInput)
     where

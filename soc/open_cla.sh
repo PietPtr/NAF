@@ -5,4 +5,7 @@ else
     FILE="$1"
 fi
 
-clash --interactive ../clash/$FILE -i../clash/ -i../clash/udp/ -i../clash/libtest/
+clash --interactive ../clash/$FILE \
+    -i../clash/ \
+    -i../clash/udp/ \
+    -i../clash/common/
