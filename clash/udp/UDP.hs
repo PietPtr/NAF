@@ -12,14 +12,14 @@ type UdpTop dom =
 
 data UdpTxIn = UdpTxIn {
     tx_ready :: Bit
-} deriving (Generic, NFDataX, Default, Show)
+} deriving (Generic, NFDataX, Default, Show, Eq)
 
 data UdpTxOut = UdpTxOut {
     tx_valid :: Bit,
     tx_first :: Bit,
     tx_last :: Bit,
     tx_payload :: BitVector 8
-} deriving (Generic, NFDataX, Default, Show)
+} deriving (Generic, NFDataX, Default, Show, Eq)
 
 instance Transaction UdpTxIn UdpTxOut where
     didTransact (UdpTxIn {..}) (UdpTxOut {..}) = tx_ready .&. tx_valid
@@ -30,11 +30,11 @@ data UdpRxIn = UdpRxIn {
     rx_last :: Bit,
     rx_payload :: BitVector 8,
     rx_last_be :: Bit
-} deriving (Generic, NFDataX, Default, Show)
+} deriving (Generic, NFDataX, Default, Show, Eq)
 
 data UdpRxOut = UdpRxOut {
     rx_ready :: Bit
-} deriving (Generic, NFDataX, Default, Show)
+} deriving (Generic, NFDataX, Default, Show, Eq)
 
 instance Transaction UdpRxIn UdpRxOut where
     didTransact (UdpRxIn {..}) (UdpRxOut {..}) = rx_ready .&. rx_valid

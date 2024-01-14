@@ -6,7 +6,7 @@
         20,
         20
     ],
-    "hash": "e7115a3af807de5d1add13b8f4664fb3df89a64ad883f83e9af709db0f4805f3",
+    "hash": "ef192d22c3e6ba0fcecb2daa96820867693277d181bbe0ab2d6f782cf707d0ad",
     "dependencies": {
         "transitive": []
     },
@@ -17,12 +17,16 @@
             "sha256": "a9286f2f72f976d8ed6a8de35e76618a34a38b2af4ad4bc2e692f8bf6eb38f6f"
         },
         {
+            "name": "main_shim.cpp",
+            "sha256": "a9286f2f72f976d8ed6a8de35e76618a34a38b2af4ad4bc2e692f8bf6eb38f6f"
+        },
+        {
             "name": "main.sdc",
             "sha256": "c564d4e38bc88a702a2909c47b587a2dfd8a814d68606d0691a5c0535a3fc8a5"
         },
         {
             "name": "main.v",
-            "sha256": "b45a0365dee6bfbc8a2acc9719d3110e0adfaef8ca9b79be23fa86ff785a4f77"
+            "sha256": "6b1fcdd5dce244a0d929253f24c2c530e07314ec3ab19564e76b604be4c94d16"
         }
     ],
     "top_component": {

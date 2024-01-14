@@ -33,4 +33,4 @@ topEntity ::
      -> Enable System
      -> Signal System (UDP.UdpRxIn, UDP.UdpTxIn)
      -> Signal System (UDP.UdpRxOut, UDP.UdpTxOut)
-topEntity = exposeClockResetEnable (system VecAsUdp.asTop)
+topEntity = exposeClockResetEnable (system UdpCounters.asTop)
